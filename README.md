@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Devioz • FICE + TACL (Frontend)
 
 Frontend premium estilo fintech para el proyecto:
@@ -57,3 +58,6 @@ Implementación: `src/services/mockDb.ts`
 
 ---
 Hecho para servir como base “producto real” (no demo) y crecer hacia backend real.
+=======
+# Devioz-fice-talc-front
+>>>>>>> 3a25ccba1b889eff3d2d67d303c003629cfe6222
