@@ -1,0 +1,1 @@
+# Devioz-fice-talc-front
