@@ -1,7 +1,7 @@
 <<<<<<< HEAD
 # Devioz • FICE + TACL (Frontend)
 
-Frontend premium estilo fintech para el proyecto:
+Frontend  estilo fintech para el proyecto:
 
 **“Sistema de Identidad Financiera para la Gestión y Análisis del Perfil del Usuario en Devioz S.A.C.”**  
 Módulos: **FICE (Identidad Financiera)** + **TACL (Trazabilidad/Auditoría/Integridad)**
@@ -35,7 +35,6 @@ npm run dev
 ## Roles demo
 Usa estas cuentas (password: cualquier valor):
 - **User**: `user@devioz.pe`
-- **Admin**: `admin@devioz.pe`
 
 Además, en el Topbar hay un **selector de contexto** (demo) para cambiar rol sin reloguear.
 
@@ -56,8 +55,6 @@ Implementación: `src/services/mockDb.ts`
   - `Dashboard layout`: localStorage
 - Animaciones: Framer Motion (`Dialog`, `Drawer`, `Dashboard widgets`, `AppShell`)
 
----
-Hecho para servir como base “producto real” (no demo) y crecer hacia backend real.
 =======
 # Devioz-fice-talc-front
 >>>>>>> 3a25ccba1b889eff3d2d67d303c003629cfe6222
