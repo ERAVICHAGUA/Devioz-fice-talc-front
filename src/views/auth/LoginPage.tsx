@@ -83,7 +83,7 @@ export function LoginPage() {
           <div className="glass rounded-3xl p-7">
             {/* Logo centrado */}
             <img
-              src="/logo-devioz.webp"
+              src="/logo-devioz.png"
               alt="Devioz"
               className="mx-auto mb-8 w-48 object-contain drop-shadow-[0_0_15px_rgba(0,255,180,0.25)]"
             />
