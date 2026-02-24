@@ -1,0 +1,49 @@
+# =========================
+# Dependencias
+# =========================
+node_modules/
+
+# =========================
+# Builds / outputs
+# =========================
+dist/
+dist-ssr/
+build/
+out/
+
+# =========================
+# Archivos de entorno (secretos)
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# =========================
+# Cache / tooling
+# =========================
+.vite/
+.cache/
+.eslintcache
+coverage/
+
+# =========================
+# Editores / SO
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
