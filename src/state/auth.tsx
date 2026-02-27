@@ -1,60 +1,82 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Role } from "@/types/domain";
-import * as db from "@/services/mockDb";
+import { authApi } from "@/services/authApi";
 
 type AuthState =
   | { status: "anonymous"; token: null; user_id: null; role: null }
-  | { status: "authenticated"; token: string; user_id: string; role: Role };
+  | { status: "authenticated"; token: string; user_id: string; role: Role | "User" };
 
 type AuthContextValue = AuthState & {
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  switchRole: (role: Role) => void; // demo helper
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
 const LS_KEY = "devioz.auth";
 
 function readLS(): AuthState {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return { status: "anonymous", token: null, user_id: null, role: null };
-    const parsed = JSON.parse(raw) as { token: string; user_id: string; role: Role };
-    return { status: "authenticated", token: parsed.token, user_id: parsed.user_id, role: parsed.role };
+
+    const parsed = JSON.parse(raw) as { token: string; user_id?: string; role?: Role | "User" };
+    if (!parsed?.token) return { status: "anonymous", token: null, user_id: null, role: null };
+
+    return {
+      status: "authenticated",
+      token: parsed.token,
+      user_id: parsed.user_id ?? "me",
+      role: (parsed.role ?? "User") as Role | "User",
+    };
   } catch {
     return { status: "anonymous", token: null, user_id: null, role: null };
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>(() => ({ status: "anonymous", token: null, user_id: null, role: null }));
+  const [state, setState] = useState<AuthState>(() => ({
+    status: "anonymous",
+    token: null,
+    user_id: null,
+    role: null,
+  }));
 
   useEffect(() => {
-    const s = readLS();
-    setState(s);
+    setState(readLS());
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {
     return {
       ...state,
+
       login: async (email, password) => {
-        const token = await db.login(email, password);
-        localStorage.setItem(LS_KEY, JSON.stringify({ token: token.token, user_id: token.user_id, role: token.role }));
-        setState({ status: "authenticated", token: token.token, user_id: token.user_id, role: token.role });
+        const data = await authApi.login(email, password);
+        if (!data?.token) throw new Error("Respuesta inválida del servidor (sin token).");
+
+        const next = {
+          token: data.token,
+          user_id: data.user_id ?? "me",
+          role: ((data.role ?? "User") as Role | "User"),
+        };
+
+        localStorage.setItem(LS_KEY, JSON.stringify(next));
+        setState({ status: "authenticated", ...next });
       },
+
+      // Register NO loguea automático (tu Postman no devuelve token)
+      register: async (email, password) => {
+        await authApi.register(email, password);
+      },
+
       logout: async () => {
-        if (state.status === "authenticated") {
-          await db.logout(state.user_id);
-        }
-        localStorage.removeItem(LS_KEY);
-        setState({ status: "anonymous", token: null, user_id: null, role: null });
-      },
-      switchRole: (role) => {
-        // purely UI demo switch (does not change user_id)
-        if (state.status === "authenticated") {
-          localStorage.setItem(LS_KEY, JSON.stringify({ token: state.token, user_id: state.user_id, role }));
-          setState({ ...state, role });
+        try {
+          if (state.status === "authenticated") {
+            await authApi.logout().catch(() => null);
+          }
+        } finally {
+          localStorage.removeItem(LS_KEY);
+          setState({ status: "anonymous", token: null, user_id: null, role: null });
         }
       },
     };

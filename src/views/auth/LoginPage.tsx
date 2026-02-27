@@ -1,240 +1,167 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/state/auth";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useAuth } from "@/state/auth";
+import { CursorGlow } from "@/components/common/CursorGlow";
 
 type Mode = "login" | "register";
 
+function errorToMessage(err: unknown) {
+  let msg = err instanceof Error ? err.message : "Ocurrió un error. Intenta de nuevo.";
+  if (msg.toLowerCase().includes("failed to fetch")) {
+    msg = "No se pudo conectar al servidor. Verifica que TALC (8081) esté encendido y CORS habilitado.";
+  }
+  return msg;
+}
+
 export function LoginPage() {
-  const auth = useAuth();
   const nav = useNavigate();
   const loc = useLocation() as any;
-  const from = loc.state?.from ?? "/dashboard";
+  const auth = useAuth();
+
+  const from = loc.state?.from ?? "/app/dashboard";
 
   const [mode, setMode] = React.useState<Mode>("login");
-
-  // Login state
-  const [email, setEmail] = React.useState("user@devioz.pe");
-  const [password, setPassword] = React.useState("demo");
   const [loading, setLoading] = React.useState(false);
 
-  // Register state (mock)
-  const [fullName, setFullName] = React.useState("");
+  const [email, setEmail] = React.useState("user@devioz.pe");
+  const [password, setPassword] = React.useState("demo");
+
   const [regEmail, setRegEmail] = React.useState("");
   const [regPassword, setRegPassword] = React.useState("");
 
   React.useEffect(() => {
-    if (auth.status === "authenticated") nav("/dashboard", { replace: true });
-  }, [auth.status, nav]);
+    if (auth.status === "authenticated") nav(from, { replace: true });
+  }, [auth.status, from, nav]);
 
-  const onLogin = async (e: React.FormEvent) => {
+  async function onLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
-      await auth.login(email, password);
-      toast.success("Bienvenido/a.");
+      await auth.login(email.trim(), password);
+      toast.success("¡Bienvenido!");
       nav(from, { replace: true });
-    } catch (err: any) {
-      const code = err?.code ?? 500;
-      toast.error(code === 403 ? "Acceso denegado" : "No se pudo iniciar sesión", {
-        description: err?.message ?? "Verifica tus credenciales.",
-      });
+    } catch (err) {
+      toast.error(errorToMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const onRegister = async (e: React.FormEvent) => {
+  async function onRegister(e: React.FormEvent) {
     e.preventDefault();
+    if (!regEmail.trim()) return toast.error("Escribe tu correo.");
+    if (!regPassword) return toast.error("Escribe una contraseña.");
+
     setLoading(true);
     try {
-      // TODO: aquí conectarás tu endpoint real: auth.register(...)
-      // Por ahora: simulación
-      if (!fullName.trim() || !regEmail.trim() || !regPassword.trim()) {
-        toast.error("Completa tus datos.");
-        return;
-      }
-
+      await auth.register(regEmail.trim(), regPassword);
       toast.success("Cuenta creada. Ahora inicia sesión.");
       setMode("login");
-      setEmail(regEmail);
+      setEmail(regEmail.trim());
       setPassword("");
+      setRegPassword("");
+    } catch (err) {
+      toast.error(errorToMessage(err));
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-bg-950 text-white">
-      <div className="pointer-events-none fixed inset-0 bg-grid opacity-[0.35]" />
-      <div className="pointer-events-none fixed -top-40 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-[#0B0F14] text-white">
+      <CursorGlow />
 
-      <div className="relative mx-auto flex min-h-screen max-w-[1100px] items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22 }}
-          className="w-full max-w-md"
-        >
-          <div className="glass rounded-3xl p-7">
-            {/* Logo centrado */}
-            <img
-              src="/logo-devioz.png"
-              alt="Devioz"
-              className="mx-auto mb-8 w-48 object-contain drop-shadow-[0_0_15px_rgba(0,255,180,0.25)]"
-            />
+      <div
+        className="pointer-events-none absolute -top-64 -right-64 h-[700px] w-[700px] rounded-full blur-[170px]"
+        style={{ background: "rgba(46, 229, 157, 0.16)" }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-72 -left-64 h-[650px] w-[650px] rounded-full blur-[170px]"
+        style={{ background: "rgba(20, 184, 166, 0.10)" }}
+      />
 
-            <div className="text-center">
-              <div className="text-lg font-semibold tracking-tight">
-                Sistema de Identidad Financiera
-              </div>
-              <div className="mt-1 text-sm text-white/60">
-                Devioz S.A.C. • Módulos <span className="text-white">FICE</span> +{" "}
-                <span className="text-white">TACL</span>
-              </div>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.12) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/60" />
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-10">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="w-full max-w-[520px]">
+          <Card className="rounded-[28px] border border-white/10 bg-white/[0.04] p-8 backdrop-blur">
+            <div className="flex flex-col items-center text-center">
+              <img src="/logo-dineroh.png" alt="Diner Oh!" className="h-12 w-auto drop-shadow-[0_0_18px_rgba(46,229,157,0.22)]" />
+              <h1 className="mt-5 text-2xl font-semibold md:text-3xl">{mode === "login" ? "Bienvenido" : "Crea tu cuenta"}</h1>
+              <p className="mt-2 max-w-sm text-sm text-white/65">{mode === "login" ? "Ingresa para ver tu panel." : "Regístrate para empezar."}</p>
             </div>
 
-            {/* Tabs */}
-            <div className="mt-6 grid grid-cols-2 rounded-2xl bg-white/5 p-1 ring-1 ring-white/10">
-              <button
-                type="button"
-                onClick={() => setMode("login")}
-                className={[
-                  "rounded-xl py-2 text-sm transition",
-                  mode === "login"
-                    ? "bg-white/10 text-white"
-                    : "text-white/60 hover:text-white",
-                ].join(" ")}
-              >
-                Iniciar sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("register")}
-                className={[
-                  "rounded-xl py-2 text-sm transition",
-                  mode === "register"
-                    ? "bg-white/10 text-white"
-                    : "text-white/60 hover:text-white",
-                ].join(" ")}
-              >
-                Registrarse
-              </button>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-1">
+              <div className="grid grid-cols-2">
+                <button type="button" onClick={() => setMode("login")} className={["rounded-xl py-2 text-sm font-semibold transition", mode === "login" ? "bg-white/10 text-white" : "text-white/65 hover:text-white"].join(" ")}>
+                  Iniciar sesión
+                </button>
+                <button type="button" onClick={() => setMode("register")} className={["rounded-xl py-2 text-sm font-semibold transition", mode === "register" ? "bg-white/10 text-white" : "text-white/65 hover:text-white"].join(" ")}>
+                  Registrarse
+                </button>
+              </div>
             </div>
 
             <AnimatePresence mode="wait">
               {mode === "login" ? (
-                <motion.div
-                  key="login"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <form onSubmit={onLogin} className="mt-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        autoComplete="email"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="current-password"
-                      />
-                    </div>
+                <motion.form key="login" onSubmit={onLogin} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="mt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-white/75">Correo</Label>
+                    <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@ejemplo.com" className="h-12 rounded-2xl border-white/10 bg-white/[0.03] text-white placeholder:text-white/35" />
+                  </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={loading}
-                      aria-busy={loading}
-                    >
-                      {loading ? "Ingresando…" : "Ingresar"}
-                    </Button>
+                  <div className="space-y-2">
+                    <Label className="text-white/75">Contraseña</Label>
+                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-12 rounded-2xl border-white/10 bg-white/[0.03] text-white placeholder:text-white/35" />
+                  </div>
 
-                    {/* Usuario único: demo simple */}
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-white/60">
-                      <div className="font-medium text-white/75">
-                        Credenciales demo:
-                      </div>
-                      <div className="mt-1">Email: user@devioz.pe</div>
-                      <div className="mt-2 text-white/40">
-                        Password: cualquier valor (mock).
-                      </div>
-                    </div>
-                  </form>
-                </motion.div>
+                  <Button type="submit" disabled={loading} className="mt-2 h-12 w-full rounded-2xl bg-emerald-400 text-black hover:bg-emerald-300">
+                    {loading ? "Ingresando..." : "Ingresar"}
+                  </Button>
+
+                  <button type="button" onClick={() => nav("/", { replace: false })} className="w-full text-center text-sm text-white/55 hover:text-white">
+                    Volver al inicio
+                  </button>
+                </motion.form>
               ) : (
-                <motion.div
-                  key="register"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <form onSubmit={onRegister} className="mt-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Nombre</Label>
-                      <Input
-                        id="fullName"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        autoComplete="name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="regEmail">Email</Label>
-                      <Input
-                        id="regEmail"
-                        value={regEmail}
-                        onChange={(e) => setRegEmail(e.target.value)}
-                        autoComplete="email"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="regPassword">Password</Label>
-                      <Input
-                        id="regPassword"
-                        type="password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        autoComplete="new-password"
-                      />
-                    </div>
+                <motion.form key="register" onSubmit={onRegister} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="mt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-white/75">Correo</Label>
+                    <Input value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="correo@ejemplo.com" className="h-12 rounded-2xl border-white/10 bg-white/[0.03] text-white placeholder:text-white/35" />
+                  </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={loading}
-                      aria-busy={loading}
-                    >
-                      {loading ? "Creando…" : "Crear cuenta"}
-                    </Button>
+                  <div className="space-y-2">
+                    <Label className="text-white/75">Contraseña</Label>
+                    <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Crea una contraseña" className="h-12 rounded-2xl border-white/10 bg-white/[0.03] text-white placeholder:text-white/35" />
+                  </div>
 
-                    <div className="text-xs text-white/45">
-                      Al crear tu cuenta, aceptas las políticas de la plataforma.
-                    </div>
-                  </form>
-                </motion.div>
+                  <Button type="submit" disabled={loading} className="mt-2 h-12 w-full rounded-2xl bg-emerald-400 text-black hover:bg-emerald-300">
+                    {loading ? "Creando..." : "Crear cuenta"}
+                  </Button>
+
+                  <button type="button" onClick={() => setMode("login")} className="w-full text-center text-sm text-white/55 hover:text-white">
+                    Ya tengo cuenta, quiero iniciar sesión
+                  </button>
+                </motion.form>
               )}
             </AnimatePresence>
-          </div>
+          </Card>
         </motion.div>
       </div>
     </div>
   );
-
 }
