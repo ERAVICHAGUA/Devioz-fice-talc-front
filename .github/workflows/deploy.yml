@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,12 +19,13 @@ jobs:
       REGION: us-central1
       REPOSITORY: engineai
       SERVICE: devioz-frontend
+      IMAGE_NAME: frontend
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/777439108015/locations/global/workloadIdentityPools/github-pool/providers/github
@@ -32,22 +34,35 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker
+      - name: Configure Docker auth for Artifact Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
+      # ✅ Verifica que los secrets existan (sin imprimir valores)
+      - name: Check required secrets exist
+        run: |
+          test -n "${{ secrets.VITE_TALC_BASE_URL }}" && echo "TALC secret OK" || (echo "TALC secret EMPTY" && exit 1)
+          test -n "${{ secrets.VITE_FICE_BASE_URL }}" && echo "FICE secret OK" || (echo "FICE secret EMPTY" && exit 1)
+
+      # ✅ Build sin cache + tags SHA y latest
       - name: Build Docker image
         run: |
-          docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/engineai/frontend:$GITHUB_SHA .
+          docker build --no-cache \
+            --build-arg VITE_TALC_BASE_URL=${{ secrets.VITE_TALC_BASE_URL }} \
+            --build-arg VITE_FICE_BASE_URL=${{ secrets.VITE_FICE_BASE_URL }} \
+            -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$GITHUB_SHA \
+            -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:latest \
+            .
 
       - name: Push Docker image
         run: |
-          docker push us-central1-docker.pkg.dev/$PROJECT_ID/engineai/frontend:$GITHUB_SHA
+          docker push us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$GITHUB_SHA
+          docker push us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:latest
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy devioz-frontend \
-            --image us-central1-docker.pkg.dev/$PROJECT_ID/engineai/frontend:$GITHUB_SHA \
-            --region us-central1 \
+          gcloud run deploy $SERVICE \
+            --image us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:latest \
+            --region $REGION \
             --platform managed \
             --allow-unauthenticated
