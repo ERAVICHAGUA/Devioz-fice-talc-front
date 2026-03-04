@@ -53,13 +53,29 @@ export function FinancialProfilePage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <KpiCard label="Income type" value={qIdentity.data.income_type} />
-              <KpiCard label="Stability score" value={`${qIdentity.data.income_stability_score}/100`} />
-              <KpiCard label="Risk tolerance" value={qIdentity.data.risk_tolerance} />
-              <KpiCard label="Decision style" value={qIdentity.data.decision_style} />
-              <KpiCard label="Created" value={fmtDate(qIdentity.data.created_at)} className="lg:col-span-2" />
-              <KpiCard label="Last updated" value={fmtDate(qIdentity.data.last_updated)} className="lg:col-span-2" />
-            </div>
+                  <KpiCard label="Income type" value={qIdentity.data?.income_type ?? "-"} />
+
+                  <KpiCard
+                    label="Stability score"
+                    value={
+                      qIdentity.data?.income_stability_score
+                        ? `${qIdentity.data.income_stability_score}/100`
+                        : "-"
+                    }
+                  />
+                  <KpiCard label="Risk tolerance" value={qIdentity.data?.risk_tolerance ?? "-"} />
+                  <KpiCard label="Decision style" value={qIdentity.data?.decision_style ?? "-"} />
+                  <KpiCard
+                    label="Created"
+                    value={qIdentity.data?.created_at ? fmtDate(qIdentity.data.created_at) : "-"}
+                    className="lg:col-span-2"
+                  />
+                  <KpiCard
+                    label="Last updated"
+                    value={qIdentity.data?.last_updated ? fmtDate(qIdentity.data.last_updated) : "-"}
+                    className="lg:col-span-2"
+                  />
+              </div>
           )}
         </CardContent>
       </Card>
